@@ -3,10 +3,10 @@
 # Author: Komachi Onozuka, https://github.com/komachi
 # Licence: CC0, https://creativecommons.org/publicdomain/zero/1.0/
 # Depends: curl, tidy, xmlstarlet, feh, sed, coreutils
-useragent=""
+useragent="$(sed -e '/^#/d' user-agents.txt | shuf -n 1)"
 function get_captcha() {
     captchaid=$(curl --cookie-jar "/tmp/zapretcookie.txt" --silent -q --user-agent "$useragent" "http://zapret-info.gov.ru" | tidy -q -numeric -asxhtml --show-warnings no  | xmlstarlet  sel -N xhtml="http://www.w3.org/1999/xhtml"  -t -v "//xhtml:input[@name='secretcodeId']/@value[1]")
-    curl --cookie "/tmp/zapretcookie.txt" --silent -q --user-agent "$useragent" -o "/tmp/$captchaid.png" "http://zapret-info.gov.ru/services/capcha/?i=$captchaid"
+    curl --cookie "/tmp/zapretcookie.txt"  --referer "http://zapret-info.gov.ru" --silent -q --user-agent "$useragent" -o "/tmp/$captchaid.png" "http://zapret-info.gov.ru/services/capcha/?i=$captchaid"
 }
 function enter_captcha() {
     echo "Enter CAPTCHA"
@@ -37,7 +37,7 @@ function antigate() {
     echo "Solution: $captchaanswer"
 }
 function zapret_check() {
-    result="$(curl --cookie "/tmp/zapretcookie.txt" --silent -q --user-agent "$useragent" --data "act=search&secretcodeId=$captchaid&searchstring=$searchstring&secretcodestatus=$captchaanswer" "http://zapret-info.gov.ru" | iconv -f cp1251 -t utf-8)"
+    result="$(curl --cookie "/tmp/zapretcookie.txt" --referer "http://zapret-info.gov.ru" --silent -q --user-agent "$useragent" --data "act=search&secretcodeId=$captchaid&searchstring=$searchstring&secretcodestatus=$captchaanswer" "http://zapret-info.gov.ru" | iconv -f cp1251 -t utf-8)"
     if [[ $(echo "$result" | grep "Искомый адрес не значится в реестре") ]]; then
         echo "$searchstring is not in Federal Registry of Banned Websites"
     elif [[ $(echo "$result" | grep "Неверно указан защитный код") ]]; then
