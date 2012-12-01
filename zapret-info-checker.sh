@@ -3,7 +3,7 @@
 # Author: Komachi Onozuka, https://github.com/komachi
 # Licence: CC0, https://creativecommons.org/publicdomain/zero/1.0/
 # Depends: curl, tidy, xmlstarlet, feh, sed, coreutils
-useragent="$(sed -e '/^#/d' user-agents.txt | shuf -n 1)"
+useragent="$(sed -e '/^#/d' $(dirname $(readlink -e "$0"))/user-agents.txt | shuf -n 1)"
 function get_captcha() {
     captchaid=$(curl --cookie-jar "/tmp/zapretcookie.txt" --silent -q --user-agent "$useragent" "http://zapret-info.gov.ru" | tidy -q -numeric -asxhtml --show-warnings no  | xmlstarlet  sel -N xhtml="http://www.w3.org/1999/xhtml"  -t -v "//xhtml:input[@name='secretcodeId']/@value[1]")
     curl --cookie "/tmp/zapretcookie.txt"  --referer "http://zapret-info.gov.ru" --silent -q --user-agent "$useragent" -o "/tmp/$captchaid.png" "http://zapret-info.gov.ru/services/capcha/?i=$captchaid"
@@ -43,9 +43,9 @@ function zapret_check() {
     elif [[ $(echo "$result" | grep "Неверно указан защитный код") ]]; then
         echo "Wrong CAPTCHA"
         if [[ $("$antigatecaptchaid") ]]; then
-            curl --silent -q --user-agent "$useragent" "http://antigate.com/res.php?key=$antigatekey&action=reportbad&id=$antigatecaptchaid"
+            curl --silent -q --user-agent "$useragent"  "http://antigate.com/res.php?key=$antigatekey&action=reportbad&id=$antigatecaptchaid"
         fi
-    elif  [[ $(echo "$result" | grep "Дата внесения в реестр") ]]; then
+    elif  [[ $(echo "$result" | grep "Искомый адрес внесен в реестр") ]]; then
         echo "$searchstring is in Federal Registery of Banned Websites"
         local resultdata=$(echo "$result" | tidy -q -numeric -asxhtml --show-warnings no --char-encoding utf8 | xmlstarlet  sel -N xhtml="http://www.w3.org/1999/xhtml"  -t -m "//xhtml:table[@class='TblGrid']/*/xhtml:td" -v . -n)
         echo -e "Date of base for entering to registy: $(echo "$resultdata" | sed -n '1p')\nNumber of base for entery to registry: $(echo "$resultdata" | sed -n '2p')\nPublic autority which add website to registry: $(echo "$resultdata" | sed -n '3p')\nDate of entering to registy: $(echo "$resultdata" | sed -n '4p')"
