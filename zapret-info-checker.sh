@@ -45,7 +45,7 @@ function zapret_check() {
         if [[ $("$antigatecaptchaid") ]]; then
             curl --silent -q --user-agent "$useragent"  "http://antigate.com/res.php?key=$antigatekey&action=reportbad&id=$antigatecaptchaid"
         fi
-    elif  [[ $(echo "$result" | grep "Искомый адрес внесен в реестр") ]]; then
+    elif  [[ $(echo "$result" | grep "внесен в реестр") ]]; then
         echo "$searchstring is in Federal Registery of Banned Websites"
         local resultdata=$(echo "$result" | tidy -q -numeric -asxhtml --show-warnings no --char-encoding utf8 | xmlstarlet  sel -N xhtml="http://www.w3.org/1999/xhtml"  -t -m "//xhtml:table[@class='TblGrid']/*/xhtml:td" -v . -n)
         echo -e "Date of base for entering to registy: $(echo "$resultdata" | sed -n '1p')\nNumber of base for entery to registry: $(echo "$resultdata" | sed -n '2p')\nPublic autority which add website to registry: $(echo "$resultdata" | sed -n '3p')\nDate of entering to registy: $(echo "$resultdata" | sed -n '4p')"
